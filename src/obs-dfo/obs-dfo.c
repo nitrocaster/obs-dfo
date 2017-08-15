@@ -11,6 +11,8 @@ typedef struct dfo
     pthread_t thread;
     volatile bool run_thread;
     int dropped_frames;
+    const char *prefix_str;
+    const char *suffix_str;
 } dfo_t;
 
 bool output_enum_cb(void *ctx, obs_output_t *output)
@@ -46,9 +48,6 @@ static void dfo_stop_thread(dfo_t *dfo)
         blog(LOG_ERROR, "Can't join updater thread");
 }
 
-
-
-
 static const char *dfo_get_name(void *unused)
 {
     UNUSED_PARAMETER(unused);
@@ -60,6 +59,8 @@ static void *dfo_create(obs_data_t *settings, obs_source_t *source)
     dfo_t *dfo = bzalloc(sizeof(dfo_t));
     dfo->dropped_frames = 0;
     dfo->source = source;
+    dfo->prefix_str = "";
+    dfo->suffix_str = "";
     const char *text_src_id = "text_ft2_source";
     dfo->overlay_src = obs_source_create(
         text_src_id, text_src_id, settings, NULL);
@@ -83,10 +84,20 @@ static void dfo_update(void *data, obs_data_t *settings)
     dfo_t *dfo = data;
     dfo_stop_thread(dfo);
     obs_data_set_string(dfo->overlay_src->context.settings, "text", "0");
+    dfo->prefix_str = obs_data_get_string(settings, "prefix_str");
+    if (!dfo->prefix_str)
+        dfo->prefix_str = "";
+    dfo->suffix_str = obs_data_get_string(settings, "suffix_str");
+    if (!dfo->suffix_str)
+        dfo->suffix_str = "";
     dfo_start_thread(dfo);
 }
 
-static void dfo_defaults(obs_data_t *data) {}
+static void dfo_defaults(obs_data_t *data)
+{
+    obs_data_set_default_string(data, "prefix_str", "");
+    obs_data_set_default_string(data, "suffix_str", "");
+}
 
 static void dfo_show(void *data)
 {
@@ -121,8 +132,9 @@ static void dfo_tick(void *data, float seconds)
     if (dfo->update_time_elapsed >= 0.1f)
     {
         dfo->update_time_elapsed = 0.0f;
-        char buf[32];
-        snprintf(buf, sizeof(buf), "%d", dfo->dropped_frames);
+        char buf[4096];
+        snprintf(buf, sizeof(buf), "%s%d%s", dfo->prefix_str,
+            dfo->dropped_frames, dfo->suffix_str);
         obs_data_set_string(dfo->overlay_src->context.settings,
             "text", dfo->run_thread ? buf : "0");
         obs_source_update(
@@ -134,6 +146,10 @@ static obs_properties_t *dfo_properties(void *data)
 {
     dfo_t *dfo = data;
     obs_properties_t *props = obs_source_properties(dfo->overlay_src);
+    obs_properties_add_text(
+        props, "prefix_str", "Text before counter", OBS_TEXT_MULTILINE);
+    obs_properties_add_text(
+        props, "suffix_str", "Text after counter", OBS_TEXT_MULTILINE);
     return props;
 }
 
