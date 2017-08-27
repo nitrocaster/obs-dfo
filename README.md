@@ -13,9 +13,15 @@ Or you can add any static text before and after the counter:
 
 You can find the background picture used in the first example in [doc/](https://github.com/nitrocaster/obs-dfo/blob/master/doc/timewarner_bg.png).
 
+For the best look with this background picture, stretch the text box over the desireable width, open *Scene Item Transform* dialog and set the following parameters:
+
+- *Positional Alignment* = *Center*
+- *Alignment in Bounding Box* = *Center*
+- *Bounding Box Type* = *Scale to inner bounds* 
+
 Bugs
 ---
-Any bug reports and pull requests appreciated. Open an issue [here](https://github.com/nitrocaster/obs-dfo/issues).
+Any bug reports and pull requests are appreciated. Open an issue [here](https://github.com/nitrocaster/obs-dfo/issues).
 
 Credits:
 ---
